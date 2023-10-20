@@ -135,6 +135,7 @@ def get_user_NBC_data(user_name):
     response = requests.get(url, headers=headers, params=params)
     try:
         data = response.json()
+        print (response)
         return data["result"]
     except Exception as e:
         print ("error:"+ str(e))
