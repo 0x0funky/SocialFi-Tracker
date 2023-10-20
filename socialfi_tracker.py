@@ -387,7 +387,7 @@ if user_input:
             # col11, col21 = st.columns(2)
             FT_image = "https://forkast.news/wp-content/uploads/2023/08/Friend.tech-logo-1260x709.jpeg"
             FT_url = f"https://www.friend.tech/{user_input}"
-            st.markdown(f'<a href="{FT_url}" target="_blank"><img src="{FT_image}" width="100%" height="200px"></a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="{FT_url}" target="_blank"><img src="{FT_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
             # st.image("https://forkast.news/wp-content/uploads/2023/08/Friend.tech-logo-1260x709.jpeg", use_column_width=True)
             # Display the 4 values
             st.markdown(f"**Price:** <span style='font-size: 18px; color: blue;'>{vals[0]}</span> ETH", unsafe_allow_html=True)
@@ -397,7 +397,7 @@ if user_input:
         with col3:
             NBC_image = "https://pbs.twimg.com/media/F8Kn5aeagAAWnpK.jpg:large"
             NBC_url = f"https://pro.newbitcoincity.com/alpha/profile/{wall_list[1]}"
-            st.markdown(f'<a href="{NBC_url}" target="_blank"><img src="{NBC_image}" width="100%" height="200px"></a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="{NBC_url}" target="_blank"><img src="{NBC_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
             # st.image("https://pbs.twimg.com/media/F8Kn5aeagAAWnpK.jpg:large", use_column_width=True)
             if vals[2]!="None":
                 formatted_val = "{:.5f}".format(vals[2])
@@ -416,7 +416,7 @@ if user_input:
             SA_url = f"https://starsarena.com/{user_input}/"
             # col11, col21 = st.columns(2)
             # st.image(SA_image, use_column_width=True)
-            st.markdown(f'<a href="{SA_url}" target="_blank"><img src="{SA_image}" width="100%" height="200px"></a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="{SA_url}" target="_blank"><img src="{SA_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
             # Display the 4 values
             st.markdown(f"**Price:** <span style='font-size: 18px; color: red;'>{vals[4]}</span> AVAX", unsafe_allow_html=True)
             st.markdown(f"**Total supply:** <span style='font-size: 18px; color: red;'>{vals[5]}</span>", unsafe_allow_html=True)
@@ -427,7 +427,7 @@ if user_input:
 
         with col5:
             TOMO_image = "https://pbs.twimg.com/media/F8PojQDbMAAKPdZ?format=jpg&name=medium"
-            st.markdown(f'<a><img src="{TOMO_image}" width="100%" height="200px"></a>', unsafe_allow_html=True)
+            st.markdown(f'<a><img src="{TOMO_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
             st.markdown(f"**(TOMO is under-developing...)**", unsafe_allow_html=True)
             st.markdown(f"**Price:** <span style='font-size: 18px; color: orange;'>None</span> AVAX", unsafe_allow_html=True)
             st.markdown(f"**Total supply:** <span style='font-size: 18px; color: orange;'>None</span>", unsafe_allow_html=True)
