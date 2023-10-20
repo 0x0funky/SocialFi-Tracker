@@ -5,6 +5,8 @@ import datetime
 import requests
 from web3 import Web3
 import tweepy
+import brotli
+import json
 
 # Twitter API credentials
 API_KEY = st.secrets["API_KEY"]
@@ -134,9 +136,14 @@ def get_user_NBC_data(user_name):
     }
     response = requests.get(url, headers=headers, params=params)
     try:
-        data = response.json()
-        print (response)
-        return data["result"]
+        content_encoding = response.headers.get('Content-Encoding')
+        if content_encoding == 'br':
+            decompressed_data = brotli.decompress(response.content)
+            decompressed_data = decompressed_data.decode('utf-8')
+            return json.loads(decompressed_data)["result"]
+        else:
+            return response.json()["result"]
+#         return data["result"]
     except Exception as e:
         print ("error:"+ str(e))
     
