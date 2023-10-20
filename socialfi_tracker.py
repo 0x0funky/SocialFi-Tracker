@@ -135,9 +135,10 @@ def get_user_NBC_data(user_name):
     response = requests.get(url, headers=headers, params=params)
     try:
         data = response.json()
+        return data["result"]
     except Exception as e:
         print ("error:"+ str(e))
-    return data["result"]
+    
 
 def get_user_SA_data(handle):
     BASE_URL = "https://api.starsarena.com/user/handle"
