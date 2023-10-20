@@ -354,9 +354,10 @@ def process_input(user_input):
     return image_path, hyperlink, values, wallet_list, user_json, in_list
 
 st.title("SocialFi Tacker")
+st.write("Eazy to know the price, supply, deposit across the 4 popular SocialFi")
 
 current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-st.write("Last updated:", current_time, "(auto update 10 sec)")
+st.write("Last updated:", current_time)
 
 
 auto_update = st.checkbox('Auto update every 10 seconds', value=False)
@@ -441,7 +442,7 @@ if user_input:
             # st.write("Total supply:", f":orange[None]")
 
 st.write("Produced by 0x0funky: ", "https://twiter.com/0x0funky ", "FT: ", "https://twitter.com/0x0funky")
-st.write("SocialFi Tracker open for free now, will open for key holder in the future.")
+st.write("SocialFi Tracker open for free now, will open for key holders only in the future.")
 if auto_update:
     time.sleep(10)  # wait for 10 seconds
     st.rerun()
