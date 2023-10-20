@@ -440,6 +440,8 @@ if user_input:
             # st.write("Price:", f":orange[None]", "ETH")
             # st.write("Total supply:", f":orange[None]")
 
+st.write("Produced by 0x0funky: ", "https://twiter.com/0x0funky ", "FT: ", "https://twitter.com/0x0funky")
+st.write("SocialFi Tracker open for free now, will open for key holder in the future.")
 if auto_update:
     time.sleep(10)  # wait for 10 seconds
     st.rerun()
