@@ -110,13 +110,7 @@ def fetch_player_profile_FT_address(address):
 def get_user_NBC_data(user_name):
     url = "https://alpha-api.newbitcoincity.com/api/player-share/tokensv1"
     headers = {
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
         "Authorization": f"Bearer {NBC_Barear}",
-        "Origin": "https://pro.newbitcoincity.com",
-        "Referer": "https://pro.newbitcoincity.com/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
     }
 
     # for i in range(41,60):
@@ -136,14 +130,8 @@ def get_user_NBC_data(user_name):
     }
     response = requests.get(url, headers=headers, params=params)
     try:
-        content_encoding = response.headers.get('Content-Encoding')
-        if content_encoding == 'br':
-            decompressed_data = brotli.decompress(response.content)
-            decompressed_data = decompressed_data.decode('utf-8')
-            return json.loads(decompressed_data)["result"]
-        else:
-            return response.json()["result"]
-#         return data["result"]
+        data = response.json()
+        return data["result"]
     except Exception as e:
         print ("error:"+ str(e))
     
