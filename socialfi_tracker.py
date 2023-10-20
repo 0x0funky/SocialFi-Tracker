@@ -133,8 +133,10 @@ def get_user_NBC_data(user_name):
         "search":f"{user_name}"
     }
     response = requests.get(url, headers=headers, params=params)
-    response.json()
-    data = response.json()
+    try:
+        data = response.json()
+    except Exception as e:
+        print ("error:"+ str(e))
     return data["result"]
 
 def get_user_SA_data(handle):
