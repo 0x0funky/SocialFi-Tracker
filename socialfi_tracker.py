@@ -353,7 +353,7 @@ def process_input(user_input):
     in_list = [FT_in_all, NBC_in_all, SA_in_all, NBC_in_all]
     return image_path, hyperlink, values, wallet_list, user_json, in_list
 
-st.title("SocialFi Tacker")
+st.title("SocialFi Tracker")
 st.write("Eazy to know the price, supply, deposit across the 4 popular SocialFi")
 
 current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
