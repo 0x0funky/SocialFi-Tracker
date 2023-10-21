@@ -221,7 +221,10 @@ def fetch_wbtc_buy_history(address):
         data = response.json()
         total_amount = 0
         for i in data['data']:
-            total_amount+=float(i["actualToAmount"])
+            try:
+                total_amount+=float(i["actualToAmount"])
+            except:
+                continue
         return total_amount/1e18
     else:
         response.raise_for_status()
