@@ -7,6 +7,7 @@ from web3 import Web3
 import tweepy
 import brotli
 import json
+import base64
 
 # Twitter API credentials
 API_KEY = st.secrets["API_KEY"]
@@ -17,6 +18,7 @@ NBC_Barear = st.secrets["NBC_Barear"]
 SA_Barear = st.secrets["SA_Barear"]
 SA_API_KEY = st.secrets["SA_API_KEY"]
 FT_API_KEY = st.secrets["FT_API_KEY"]
+
 
 
 
@@ -176,7 +178,7 @@ def SA_balance(address):
         "startblock": 35000000,
         "endblock": 40000000,
         "page": 1,
-        "offset": 500,
+        "offset": 10000,
         "sort": "asc",
         "apikey": SA_API_KEY  # Replace with your actual API key
     }
@@ -187,22 +189,31 @@ def SA_balance(address):
     return data['result']
 
 
-def SA_in_balance(address):
+def SA_in_out_balance(address):
     # address = address
     transactions = SA_balance(address)
+    # total_out_value =  sum(int(tx['value']) for tx in transactions if ((tx['from'].lower() == address.lower()) and (tx["to"].lower!="0x563395A2a04a7aE0421d34d62ae67623cAF67D03".lower())))
     total_incoming_value = 0
-
     total_incoming_value1 = sum(int(tx['value']) for tx in transactions if tx['to'].lower() == address.lower())
+    total_out_value = 0
+    total_out_value1 = 0
     for tx in transactions:
         if tx['to'].lower() == address.lower():
             pre_address = tx["from"]
-            if pre_address.lower()=="0xA16F524a804BEaED0d791De0aa0b5836295A2a84".lower():
+            print (pre_address)
+            if pre_address.lower() =="0xA16F524a804BEaED0d791De0aa0b5836295A2a84".lower():
                 break
-            transactions = SA_balance(pre_address)
-            total_incoming_value = sum(int(tx2['value']) for tx2 in transactions if tx2['to'].lower() == pre_address.lower())
+            if pre_address.lower() =="0x9f8c163cBA728e99993ABe7495F06c0A3c8Ac8b9".lower():
+                break
+            transactions2 = SA_balance(pre_address)
+            total_incoming_value = sum(int(tx2['value']) for tx2 in transactions2 if (tx2['to'].lower() == pre_address.lower()) and (tx2['to'].lower() != address.lower()))
+            total_out_value1 =  sum(int(tx2['value']) for tx2 in transactions2 if ((tx2['from'].lower() == pre_address.lower()) and (tx2["to"].lower() !="0xA481B139a1A654cA19d2074F174f17D7534e8CeC".lower()) and (tx2["to"].lower() != address.lower())))
+            total_out_value =  sum(int(tx['value']) for tx in transactions if ((tx['from'].lower() == address.lower()) and (tx["to"].lower()!="0x563395A2a04a7aE0421d34d62ae67623cAF67D03".lower()) and (tx["to"].lower()!=pre_address.lower())))
             break
+
+    # total_out_value/1e18, total_out_value1/1e18
             
-    return (total_incoming_value1+total_incoming_value)/1e18
+    return (total_incoming_value1+total_incoming_value)/1e18, (total_out_value+total_out_value1)/1e18
 
 
 def fetch_wbtc_buy_history(address):
@@ -229,6 +240,35 @@ def fetch_wbtc_buy_history(address):
     else:
         response.raise_for_status()
 
+
+def NBC_withdraw(addressHash):
+    BASE_URL = f"https://explorer.l2.trustless.computer/api?module=account&action=txlist&address={addressHash}&offset=10000"
+    # Make the request
+    response = requests.get(BASE_URL)
+    data = response.json()
+    transactions = data["result"]
+    true = True
+    false = False
+
+    ABI = [{"type":"event","name":"BridgeToken","inputs":[{"type":"address","name":"token","internalType":"contract WrappedToken","indexed":false},{"type":"address","name":"burner","internalType":"address","indexed":false},{"type":"uint256","name":"amount","internalType":"uint256","indexed":false},{"type":"string","name":"extddr","internalType":"string","indexed":false},{"type":"uint256","name":"destChainId","internalType":"uint256","indexed":false}],"anonymous":false},{"type":"event","name":"Initialized","inputs":[{"type":"uint8","name":"version","internalType":"uint8","indexed":false}],"anonymous":false},{"type":"event","name":"Mint","inputs":[{"type":"address[]","name":"tokens","internalType":"contract WrappedToken[]","indexed":false},{"type":"address[]","name":"recipients","internalType":"address[]","indexed":false},{"type":"uint256[]","name":"amounts","internalType":"uint256[]","indexed":false}],"anonymous":false},{"type":"event","name":"Mint","inputs":[{"type":"address","name":"token","internalType":"contract WrappedToken","indexed":false},{"type":"address[]","name":"recipients","internalType":"address[]","indexed":false},{"type":"uint256[]","name":"amounts","internalType":"uint256[]","indexed":false}],"anonymous":false},{"type":"event","name":"OwnershipTransferred","inputs":[{"type":"address","name":"previousOwner","internalType":"address","indexed":true},{"type":"address","name":"newOwner","internalType":"address","indexed":true}],"anonymous":false},{"type":"function","stateMutability":"view","outputs":[{"type":"address","name":"","internalType":"contract IERC20"}],"name":"ETH_TOKEN","inputs":[]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"bridgeToken","inputs":[{"type":"address","name":"token","internalType":"address"},{"type":"uint256","name":"amount","internalType":"uint256"},{"type":"string","name":"externalAddr","internalType":"string"},{"type":"uint256","name":"destChainId","internalType":"uint256"}]},{"type":"function","stateMutability":"payable","outputs":[],"name":"bridgeToken","inputs":[{"type":"string","name":"externalAddr","internalType":"string"},{"type":"uint256","name":"destChainId","internalType":"uint256"}]},{"type":"function","stateMutability":"view","outputs":[{"type":"bool","name":"","internalType":"bool"}],"name":"burnableToken","inputs":[{"type":"address","name":"","internalType":"address"}]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"initialize","inputs":[{"type":"address","name":"safeMultisigContractAddress","internalType":"address"},{"type":"address","name":"operator_","internalType":"address"},{"type":"address[]","name":"tokens","internalType":"address[]"}]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"mint","inputs":[{"type":"address[]","name":"tokens","internalType":"contract WrappedToken[]"},{"type":"address[]","name":"recipients","internalType":"address[]"},{"type":"uint256[]","name":"amounts","internalType":"uint256[]"}]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"mint","inputs":[{"type":"address","name":"token","internalType":"contract WrappedToken"},{"type":"address[]","name":"recipients","internalType":"address[]"},{"type":"uint256[]","name":"amounts","internalType":"uint256[]"}]},{"type":"function","stateMutability":"view","outputs":[{"type":"address","name":"","internalType":"address"}],"name":"operator","inputs":[]},{"type":"function","stateMutability":"view","outputs":[{"type":"address","name":"","internalType":"address"}],"name":"owner","inputs":[]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"renounceOwnership","inputs":[]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"transferOperator","inputs":[{"type":"address","name":"operator_","internalType":"address"}]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"transferOwnership","inputs":[{"type":"address","name":"newOwner","internalType":"address"}]},{"type":"function","stateMutability":"nonpayable","outputs":[],"name":"updateToken","inputs":[{"type":"address[]","name":"tokens","internalType":"address[]"},{"type":"bool[]","name":"isBurns","internalType":"bool[]"}]}]
+
+
+    w3 = Web3()
+
+    contract = w3.eth.contract(abi=ABI)
+    output_amount = 0
+    try:
+        for i in transactions:
+            if i["to"].lower() == "0x966d0714eFA3e3950A2bd4F4b3760D0Fc07209f5".lower():
+                input_data = i["input"]
+                decoded_data = contract.decode_function_input(input_data)
+                output_amount+=decoded_data[1]['amount']
+    #             print (decoded_data[1]['amount']/1e18)
+        return (output_amount/1e18)
+    except:
+        return 0
+
+
 def FT_balance_tx(address):
 # Define the API endpoint and parameters
     BASE_URL = "https://api.basescan.org/api"
@@ -236,10 +276,10 @@ def FT_balance_tx(address):
         "module": "account",
         "action": "txlist",
         "address": f"{address}",
-        "startblock": 3500000,
+        "startblock": 2000000,
         "endblock": 6000000,
         "page": 1,
-        "offset": 500,
+        "offset": 10000,
         "sort": "asc",
         "apikey": FT_API_KEY  # Replace with your actual API key
     }
@@ -256,10 +296,10 @@ def FT_balance_itx(address):
         "module": "account",
         "action": "txlistinternal",
         "address": f"{address}",
-        "startblock": 3500000,
+        "startblock": 2000000,
         "endblock": 6000000,
         "page": 1,
-        "offset": 500,
+        "offset": 10000,
         "sort": "asc",
         "apikey": FT_API_KEY  # Replace with your actual API key
     }
@@ -300,6 +340,7 @@ def process_input(user_input):
         supply_share = "None"
         FT_address = "None"
         FT_in_all = "None"
+        FT_out_all = "None"
     else:
         pfp_link = data["twitterPfpUrl"]
         price_FT = float(data["displayPrice"])/1e18
@@ -307,11 +348,15 @@ def process_input(user_input):
         FT_address = data["address"]
         data = FT_balance_tx(FT_address)
         transactions = data
+        total_out_value = sum(int(tx['value']) for tx in transactions if ((tx['from'].lower() == FT_address.lower()) and (tx["to"].lower()!="0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4".lower())))
+        print (total_out_value)
         total_incoming_value1 = sum(int(tx['value']) for tx in transactions if tx['to'].lower() == FT_address.lower())
         data = FT_balance_itx(FT_address)
         transactions = data
         total_incoming_value = sum(int(tx['value']) for tx in transactions if (tx['to'].lower() == FT_address.lower()) and (tx['from'].lower()!="0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4".lower()))
+        
         FT_in_all = (total_incoming_value1+total_incoming_value)/1e18
+        FT_out_all = total_out_value/1e18
 
     SA_data = get_user_SA_data(user_input)
     if SA_data:
@@ -319,12 +364,13 @@ def process_input(user_input):
             pfp_link = SA_data["twitterPicture"]
         SA_address = SA_data["address"]
         supply_share_SA, price_SA = get_SA_price(SA_address)
-        SA_in_all = SA_in_balance(SA_address)
+        SA_in_all, SA_out_all = SA_in_out_balance(SA_address)
     else:
         SA_address = "None"
         supply_share_SA = "None"
         price_SA = "None"
         SA_in_all = "None"
+        SA_out_all = "None"
 
 
     NBC_data = get_user_NBC_data(user_input)
@@ -334,6 +380,7 @@ def process_input(user_input):
         price_NBC = float(NBC_data[0]["price"])
         supply_share_NBC = float(NBC_data[0]["total_supply"])
         NBC_in_all = fetch_wbtc_buy_history(NBC_address)
+        NBC_out_all = NBC_withdraw(NBC_address)
         if pfp_link == "":
             pfp_link = NBC_data[0]["user_twitter_avatar"]
     else:
@@ -341,6 +388,7 @@ def process_input(user_input):
         NBC_address = "None"
         supply_share_NBC = "None"
         NBC_in_all = "None"
+        NBC_out_all = "None"
 
 
 
@@ -354,9 +402,20 @@ def process_input(user_input):
     values = [price_FT, supply_share, price_NBC, supply_share_NBC, price_SA, supply_share_SA]
     wallet_list = [FT_address, NBC_address, SA_address, NBC_address]
     in_list = [FT_in_all, NBC_in_all, SA_in_all, NBC_in_all]
-    return image_path, hyperlink, values, wallet_list, user_json, in_list
+    out_list = [FT_out_all, NBC_out_all, SA_out_all, NBC_out_all]
+    return image_path, hyperlink, values, wallet_list, user_json, in_list, out_list
 
-st.title("SocialFi Tracker")
+# st.title("SocialFi Tracker")
+
+
+def image_to_base64(img_path):
+    with open(img_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+icon_url = f"data:image/png;base64,{image_to_base64('./SocialFi_Tracker.png')}"
+title_text = "SocialFi Tracker"
+
+st.markdown(f'<img src="{icon_url}" style="vertical-align:middle; display:inline; margin-right:10px; width:40px; height:40px;"> <span style="font-size: 45px; vertical-align:middle;"><strong>{title_text}</strong></span>', unsafe_allow_html=True)
 st.write("Eazy to know the price, supply, deposit across the 4 popular SocialFi")
 
 current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -368,7 +427,13 @@ user_input = st.text_input("Enter Twitter User Name:")
 
 if user_input:
     with st.spinner('Wait for it...'):
-        image, link, vals, wall_list, user_json, in_list = process_input(user_input)
+        price_AVAX_response = requests.get(f"https://api.snowtrace.io/api?module=stats&action=ethprice&apikey={SA_API_KEY}")
+        price_AVAX = float(price_AVAX_response.json()["result"]["ethusd"])
+        price_ETH_response = requests.get(f"https://api.basescan.org/api?module=stats&action=ethprice&apikey={FT_API_KEY}")
+        price_ETH = float(price_ETH_response.json()["result"]["ethusd"])
+        price_BTC = price_ETH/float(price_ETH_response.json()["result"]["ethbtc"])
+        st.write("Current price: ", f"ETH = {round(price_ETH,3)} USD, ", f"BTC = {round(price_BTC,3)} USD, ", f"AVAX = {round(price_AVAX,3)} USD")
+        image, link, vals, wall_list, user_json, in_list, out_list = process_input(user_input)
 
         col1, col2, col3, col4, col5 = st.columns(5)
 
@@ -393,9 +458,10 @@ if user_input:
             st.markdown(f'<a href="{FT_url}" target="_blank"><img src="{FT_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
             # st.image("https://forkast.news/wp-content/uploads/2023/08/Friend.tech-logo-1260x709.jpeg", use_column_width=True)
             # Display the 4 values
-            st.markdown(f"**Price:** <span style='font-size: 18px; color: blue;'>{vals[0]}</span> ETH", unsafe_allow_html=True)
+            st.markdown(f"**Price:** <span style='font-size: 18px; color: blue;'>{vals[0]}</span> ETH (~{round(vals[0]*price_ETH, 2)} USD)", unsafe_allow_html=True)
             st.markdown(f"**Total supply:** <span style='font-size: 18px; color: blue;'>{vals[1]}</span>", unsafe_allow_html=True)
-            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: blue;'>{in_list[0]}</span> ETH", unsafe_allow_html=True)
+            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: blue;'>{in_list[0]}</span> ETH (~{round(in_list[0]*price_ETH, 2)} USD)", unsafe_allow_html=True)
+            st.markdown(f"**All Withdraw:** <span style='font-size: 18px; color: blue;'>{out_list[0]}</span> ETH (~{round(out_list[0]*price_ETH, 2)} USD)", unsafe_allow_html=True)
 
         with col3:
             NBC_image = "https://pbs.twimg.com/media/F8Kn5aeagAAWnpK.jpg:large"
@@ -403,14 +469,14 @@ if user_input:
             st.markdown(f'<a href="{NBC_url}" target="_blank"><img src="{NBC_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
             # st.image("https://pbs.twimg.com/media/F8Kn5aeagAAWnpK.jpg:large", use_column_width=True)
             if vals[2]!="None":
-                formatted_val = "{:.5f}".format(vals[2])
+                formatted_val = round(vals[2],7)
                 # st.write("Price:", f":orange[{formatted_val}]", "BTC")
-                st.markdown(f"**Price:** <span style='font-size: 18px; color: orange;'>{formatted_val}</span> BTC", unsafe_allow_html=True)
+                st.markdown(f"**Price:** <span style='font-size: 18px; color: orange;'>{formatted_val}</span> BTC (~{round(formatted_val*price_BTC, 2)} USD)", unsafe_allow_html=True)
             else:
-                # st.write("Price:", f":orange[{vals[2]}]", "BTC")
-                st.markdown(f"**Price:** <span style='font-size: 18px; color: orange;'>{vals[2]}</span> BTC", unsafe_allow_html=True)
+                st.markdown(f"**Price:** <span style='font-size: 18px; color: orange;'>{vals[2]}</span> BTC (~{round(vals[2]*price_BTC, 2)} USD)", unsafe_allow_html=True)
             st.markdown(f"**Total supply:** <span style='font-size: 18px; color: orange;'>{vals[3]}</span>", unsafe_allow_html=True)
-            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: orange;'>{in_list[1]}</span> BTC", unsafe_allow_html=True)
+            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: orange;'>{in_list[1]}</span> BTC (~{round(in_list[1]*price_BTC, 2)} USD)", unsafe_allow_html=True)
+            st.markdown(f"**All Withdraw:** <span style='font-size: 18px; color: orange;'>{out_list[1]}</span> ETH (~{round(out_list[1]*price_ETH, 2)} USD)", unsafe_allow_html=True)
             # st.write("Total supply:", f":orange[{vals[3]}]")
             # st.write("All Deposit:", f":orange[{in_list[1]}]", "BTC")
 
@@ -421,9 +487,10 @@ if user_input:
             # st.image(SA_image, use_column_width=True)
             st.markdown(f'<a href="{SA_url}" target="_blank"><img src="{SA_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
             # Display the 4 values
-            st.markdown(f"**Price:** <span style='font-size: 18px; color: red;'>{vals[4]}</span> AVAX", unsafe_allow_html=True)
+            st.markdown(f"**Price:** <span style='font-size: 18px; color: red;'>{vals[4]}</span> AVAX (~{round(vals[4]*price_AVAX, 2)} USD)", unsafe_allow_html=True)
             st.markdown(f"**Total supply:** <span style='font-size: 18px; color: red;'>{vals[5]}</span>", unsafe_allow_html=True)
-            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: red;'>{in_list[2]}</span> AVAX", unsafe_allow_html=True)
+            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: red;'>{in_list[2]}</span> AVAX (~{round(in_list[2]*price_AVAX, 2)} USD)", unsafe_allow_html=True)
+            st.markdown(f"**All Withdraw:** <span style='font-size: 18px; color: red;'>{out_list[2]}</span> AVAX (~{round(out_list[2]*price_AVAX, 2)} USD)", unsafe_allow_html=True)
             # st.write("Price:", f":orange[{vals[4]}]", "AVAX")
             # st.write("Total supply:", f":orange[{vals[5]}]")
             # st.write("All Deposit:", f":orange[{in_list[2]}]", "AVAX")
