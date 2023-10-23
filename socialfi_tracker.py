@@ -452,45 +452,99 @@ if user_input:
             st.markdown(f"**Tweets counts:** <span style='font-size: 18px;'>{user_json['tweets_count']}</span>", unsafe_allow_html=True)
 
         with col2:
+
             # col11, col21 = st.columns(2)
             FT_image = "https://forkast.news/wp-content/uploads/2023/08/Friend.tech-logo-1260x709.jpeg"
             FT_url = f"https://www.friend.tech/{user_input}"
+
+            FT_price = vals[0]
+            if FT_price == "None":
+                FT_price_u = "None"
+            else:
+                FT_price_u = round(FT_price*price_ETH, 2)
+            
+            FT_deposit = in_list[0]
+            if FT_deposit == "None":
+                FT_deposit_u = "None"
+            else:
+                FT_deposit_u = round(FT_deposit*price_ETH, 2)
+
+            FT_withdraw = out_list[0]
+            if FT_withdraw == "None":
+                FT_withdraw_u = "None"
+            else:
+                FT_withdraw_u = round(FT_withdraw*price_ETH, 2)
+
             st.markdown(f'<a href="{FT_url}" target="_blank"><img src="{FT_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
             # st.image("https://forkast.news/wp-content/uploads/2023/08/Friend.tech-logo-1260x709.jpeg", use_column_width=True)
             # Display the 4 values
-            st.markdown(f"**Price:** <span style='font-size: 18px; color: blue;'>{vals[0]}</span> ETH (~{round(vals[0]*price_ETH, 2)} USD)", unsafe_allow_html=True)
+            st.markdown(f"**Price:** <span style='font-size: 18px; color: blue;'>{FT_price}</span> ETH (~{FT_price_u} USD)", unsafe_allow_html=True)
             st.markdown(f"**Total supply:** <span style='font-size: 18px; color: blue;'>{vals[1]}</span>", unsafe_allow_html=True)
-            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: blue;'>{in_list[0]}</span> ETH (~{round(in_list[0]*price_ETH, 2)} USD)", unsafe_allow_html=True)
-            st.markdown(f"**All Withdraw:** <span style='font-size: 18px; color: blue;'>{out_list[0]}</span> ETH (~{round(out_list[0]*price_ETH, 2)} USD)", unsafe_allow_html=True)
+            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: blue;'>{FT_deposit}</span> ETH (~{FT_deposit_u} USD)", unsafe_allow_html=True)
+            st.markdown(f"**All Withdraw:** <span style='font-size: 18px; color: blue;'>{FT_withdraw}</span> ETH (~{FT_withdraw_u} USD)", unsafe_allow_html=True)
 
         with col3:
             NBC_image = "https://pbs.twimg.com/media/F8Kn5aeagAAWnpK.jpg:large"
             NBC_url = f"https://pro.newbitcoincity.com/alpha/profile/{wall_list[1]}"
             st.markdown(f'<a href="{NBC_url}" target="_blank"><img src="{NBC_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
             # st.image("https://pbs.twimg.com/media/F8Kn5aeagAAWnpK.jpg:large", use_column_width=True)
+            NBC_price = vals[2]
+            if NBC_price == "None":
+                NBC_price_u = "None"
+            else:
+                NBC_price_u = round(vals[2]*price_BTC, 2)
+            
+            NBC_deposit = in_list[1]
+            if NBC_deposit == "None":
+                NBC_deposit_u = "None"
+            else:
+                NBC_deposit_u = round(in_list[1]*price_BTC, 2)
+
+            NBC_withdraw = out_list[1]
+            if NBC_withdraw == "None":
+                NBC_withdraw_u = "None"
+            else:
+                NBC_withdraw_u = round(out_list[1]*price_ETH, 2)
             if vals[2]!="None":
                 formatted_val = round(vals[2],7)
                 # st.write("Price:", f":orange[{formatted_val}]", "BTC")
                 st.markdown(f"**Price:** <span style='font-size: 18px; color: orange;'>{formatted_val}</span> BTC (~{round(formatted_val*price_BTC, 2)} USD)", unsafe_allow_html=True)
             else:
-                st.markdown(f"**Price:** <span style='font-size: 18px; color: orange;'>{vals[2]}</span> BTC (~{round(vals[2]*price_BTC, 2)} USD)", unsafe_allow_html=True)
+                st.markdown(f"**Price:** <span style='font-size: 18px; color: orange;'>{NBC_price}</span> BTC (~{NBC_price_u} USD)", unsafe_allow_html=True)
             st.markdown(f"**Total supply:** <span style='font-size: 18px; color: orange;'>{vals[3]}</span>", unsafe_allow_html=True)
-            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: orange;'>{in_list[1]}</span> BTC (~{round(in_list[1]*price_BTC, 2)} USD)", unsafe_allow_html=True)
-            st.markdown(f"**All Withdraw:** <span style='font-size: 18px; color: orange;'>{out_list[1]}</span> ETH (~{round(out_list[1]*price_ETH, 2)} USD)", unsafe_allow_html=True)
+            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: orange;'>{NBC_deposit}</span> BTC (~{NBC_deposit_u} USD)", unsafe_allow_html=True)
+            st.markdown(f"**All Withdraw:** <span style='font-size: 18px; color: orange;'>{NBC_withdraw}</span> ETH (~{NBC_withdraw_u} USD)", unsafe_allow_html=True)            
             # st.write("Total supply:", f":orange[{vals[3]}]")
             # st.write("All Deposit:", f":orange[{in_list[1]}]", "BTC")
 
         with col4:
             SA_image = "https://lwcdn.freebitco.in/wp-content/uploads/2023/10/Stars-Arena-img.png"
             SA_url = f"https://starsarena.com/{user_input}/"
+            SA_price = vals[4]
+            if SA_price == "None":
+                SA_price_u = "None"
+            else:
+                SA_price_u = round(SA_price*price_AVAX, 2)
+            
+            SA_deposit = in_list[2]
+            if SA_deposit == "None":
+                SA_deposit_u = "None"
+            else:
+                SA_deposit_u = round(SA_deposit*price_AVAX, 2)
+
+            SA_withdraw = out_list[2]
+            if SA_withdraw == "None":
+                SA_withdraw_u = "None"
+            else:
+                SA_withdraw_u = round(SA_withdraw*price_AVAX, 2)
             # col11, col21 = st.columns(2)
             # st.image(SA_image, use_column_width=True)
             st.markdown(f'<a href="{SA_url}" target="_blank"><img src="{SA_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
             # Display the 4 values
-            st.markdown(f"**Price:** <span style='font-size: 18px; color: red;'>{vals[4]}</span> AVAX (~{round(vals[4]*price_AVAX, 2)} USD)", unsafe_allow_html=True)
+            st.markdown(f"**Price:** <span style='font-size: 18px; color: red;'>{SA_price}</span> AVAX (~{SA_price_u} USD)", unsafe_allow_html=True)
             st.markdown(f"**Total supply:** <span style='font-size: 18px; color: red;'>{vals[5]}</span>", unsafe_allow_html=True)
-            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: red;'>{in_list[2]}</span> AVAX (~{round(in_list[2]*price_AVAX, 2)} USD)", unsafe_allow_html=True)
-            st.markdown(f"**All Withdraw:** <span style='font-size: 18px; color: red;'>{out_list[2]}</span> AVAX (~{round(out_list[2]*price_AVAX, 2)} USD)", unsafe_allow_html=True)
+            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: red;'>{SA_deposit}</span> AVAX (~{SA_deposit_u} USD)", unsafe_allow_html=True)
+            st.markdown(f"**All Withdraw:** <span style='font-size: 18px; color: red;'>{SA_withdraw}</span> AVAX (~{SA_withdraw_u} USD)", unsafe_allow_html=True)
             # st.write("Price:", f":orange[{vals[4]}]", "AVAX")
             # st.write("Total supply:", f":orange[{vals[5]}]")
             # st.write("All Deposit:", f":orange[{in_list[2]}]", "AVAX")
