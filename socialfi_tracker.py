@@ -8,6 +8,7 @@ import tweepy
 import brotli
 import json
 import base64
+from datetime import timedelta
 
 # Twitter API credentials
 API_KEY = st.secrets["API_KEY"]
@@ -189,12 +190,12 @@ def SA_balance(address):
     return data['result']
 
 
-def SA_in_out_balance(address):
+def SA_in_out_balance(data, address):
     # address = address
-    transactions = SA_balance(address)
+    transactions = data
     # total_out_value =  sum(int(tx['value']) for tx in transactions if ((tx['from'].lower() == address.lower()) and (tx["to"].lower!="0x563395A2a04a7aE0421d34d62ae67623cAF67D03".lower())))
     total_incoming_value = 0
-    total_incoming_value1 = sum(int(tx['value']) for tx in transactions if tx['to'].lower() == address.lower())
+    total_incoming_value1 = sum(int(tx['value']) for tx in transactions if (tx['to'].lower() == address.lower()) and (tx['from'].lower() != address.lower()))
     total_out_value = 0
     total_out_value1 = 0
     for tx in transactions:
@@ -205,9 +206,9 @@ def SA_in_out_balance(address):
             if pre_address.lower() =="0x9f8c163cBA728e99993ABe7495F06c0A3c8Ac8b9".lower():
                 break
             transactions2 = SA_balance(pre_address)
-            total_incoming_value = sum(int(tx2['value']) for tx2 in transactions2 if (tx2['to'].lower() == pre_address.lower()) and (tx2['to'].lower() != address.lower()))
-            total_out_value1 =  sum(int(tx2['value']) for tx2 in transactions2 if ((tx2['from'].lower() == pre_address.lower()) and (tx2["to"].lower() !="0xA481B139a1A654cA19d2074F174f17D7534e8CeC".lower()) and (tx2["to"].lower() != address.lower())))
-            total_out_value =  sum(int(tx['value']) for tx in transactions if ((tx['from'].lower() == address.lower()) and (tx["to"].lower()!="0x563395A2a04a7aE0421d34d62ae67623cAF67D03".lower()) and (tx["to"].lower()!=pre_address.lower())))
+            total_incoming_value = sum(int(tx2['value']) for tx2 in transactions2 if (tx2['to'].lower() == pre_address.lower()) and (tx2['to'].lower() != address.lower()) and (tx2['from'].lower() != pre_address.lower()))
+            total_out_value1 =  sum(int(tx2['value']) for tx2 in transactions2 if ((tx2['from'].lower() == pre_address.lower()) and (tx2['to'].lower() != pre_address.lower()) and (tx2["to"].lower() !="0xA481B139a1A654cA19d2074F174f17D7534e8CeC".lower()) and (tx2["to"].lower() != address.lower())))
+            total_out_value =  sum(int(tx['value']) for tx in transactions if ((tx['from'].lower() == address.lower()) and (tx['to'].lower() != address.lower()) and (tx["to"].lower()!="0x563395A2a04a7aE0421d34d62ae67623cAF67D03".lower()) and (tx["to"].lower()!=pre_address.lower())))
             break
 
     # total_out_value/1e18, total_out_value1/1e18
@@ -238,6 +239,15 @@ def fetch_wbtc_buy_history(address):
         return total_amount/1e18
     else:
         response.raise_for_status()
+
+def NBC_tx(addressHash):
+# addressHash = "0x1b23a52d3bba7ed9bb30a35e50b61f7be5ec7f0c"
+    BASE_URL = f"https://explorer.l2.trustless.computer/api?module=account&action=txlist&address={addressHash}&offset=10000"
+    # Make the request
+    response = requests.get(BASE_URL)
+    data = response.json()
+    transactions = data["result"]
+    return transactions
 
 
 def NBC_withdraw(addressHash):
@@ -308,6 +318,36 @@ def FT_balance_itx(address):
     data = response.json()
     return data['result']
 
+def FT_buy_sell_count(data, time_hours):
+    buy_count = 0
+    sell_count = 0
+    for i in data:
+        if ("0xb51d0534" in i["input"]) and is_within_last_hours(int(i["timeStamp"]), time_hours):
+            sell_count+=1
+        if "0x6945b123" in i["input"] and is_within_last_hours(int(i["timeStamp"]), time_hours):
+            buy_count+=1
+    return buy_count, sell_count
+
+def NBC_buy_sell_count(data, time_hours):
+    buy_count = 0
+    sell_count = 0
+    for i in data:
+        if ("0x3f566994" in i["input"]) and is_within_last_hours(int(i["timeStamp"]), time_hours):
+            sell_count+=1
+        if "0x74567f0f" in i["input"] and is_within_last_hours(int(i["timeStamp"]), time_hours):
+            buy_count+=1
+    return buy_count, sell_count
+
+def SA_buy_sell_count(data, time_hours):
+    buy_count = 0
+    sell_count = 0
+    for i in data:
+        if (("0xaac35d87" in i["input"]) or ("0xb51d0534" in i["input"])) and is_within_last_hours(int(i["timeStamp"]), time_hours):
+            sell_count+=1
+        if (("0x6945b123" in i["input"]) or ("0xe9ccf3a3" in i["input"])) and is_within_last_hours(int(i["timeStamp"]), time_hours):
+            buy_count+=1
+    return buy_count, sell_count
+
 # Test the function
 
 # address_value = "0x58264ac8e24a101ef90b28616c740863b159083b"
@@ -323,7 +363,7 @@ UPDATE_INTERVAL = 5  # in seconds
 # list_user = current_account_info["user_twitter_username"].tolist()
 
 def process_input(user_input):
-    print (user_input)
+    # print (user_input)
     try:
         user_json = get_user_details(user_input)
     except:
@@ -341,18 +381,20 @@ def process_input(user_input):
         FT_address = "None"
         FT_in_all = "None"
         FT_out_all = "None"
+        FT_data = None
     else:
         pfp_link = data["twitterPfpUrl"]
         price_FT = float(data["displayPrice"])/1e18
         supply_share = int(data["shareSupply"])
         FT_address = data["address"]
         data = FT_balance_tx(FT_address)
+        FT_data = data
         transactions = data
         total_out_value = sum(int(tx['value']) for tx in transactions if ((tx['from'].lower() == FT_address.lower()) and (tx["to"].lower()!="0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4".lower())))
-        total_incoming_value1 = sum(int(tx['value']) for tx in transactions if tx['to'].lower() == FT_address.lower())
+        total_incoming_value1 = sum(int(tx['value']) for tx in transactions if (tx['to'].lower() == FT_address.lower() and tx['from'].lower() != FT_address.lower()))
         data = FT_balance_itx(FT_address)
         transactions = data
-        total_incoming_value = sum(int(tx['value']) for tx in transactions if (tx['to'].lower() == FT_address.lower()) and (tx['from'].lower()!="0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4".lower()))
+        total_incoming_value = sum(int(tx['value']) for tx in transactions if (tx['to'].lower() == FT_address.lower()) and (tx['from'].lower()!="0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4".lower()) and (tx['from'].lower()!=FT_address.lower()))
         
         FT_in_all = (total_incoming_value1+total_incoming_value)/1e18
         FT_out_all = total_out_value/1e18
@@ -363,13 +405,15 @@ def process_input(user_input):
             pfp_link = SA_data["twitterPicture"]
         SA_address = SA_data["address"]
         supply_share_SA, price_SA = get_SA_price(SA_address)
-        SA_in_all, SA_out_all = SA_in_out_balance(SA_address)
+        SA_data = SA_balance(SA_address)
+        SA_in_all, SA_out_all = SA_in_out_balance(SA_data, SA_address)
     else:
         SA_address = "None"
         supply_share_SA = "None"
         price_SA = "None"
         SA_in_all = "None"
         SA_out_all = "None"
+        SA_data = None
 
 
     NBC_data = get_user_NBC_data(user_input)
@@ -378,6 +422,7 @@ def process_input(user_input):
         NBC_address = NBC_data[0]['owner']
         price_NBC = float(NBC_data[0]["price"])
         supply_share_NBC = float(NBC_data[0]["total_supply"])
+        NBC_data = NBC_tx(NBC_address)
         NBC_in_all = fetch_wbtc_buy_history(NBC_address)
         NBC_out_all = NBC_withdraw(NBC_address)
         if pfp_link == "":
@@ -388,15 +433,16 @@ def process_input(user_input):
         supply_share_NBC = "None"
         NBC_in_all = "None"
         NBC_out_all = "None"
+        NBC_data = None
 
 
 
         # NBC_str = f"NBC => Price: {price_NBC} BTC, ShareSupply: {supply_share_NBC}"
     
     # reply_str=f"""0x0funky || {FT_str} || {NBC_str} """
-    print (f"FT address = {FT_address}")
-    print (f"SA address = {SA_address}")
-    print (f"NBC address = {NBC_address}")
+    # print (f"FT address = {FT_address}")
+    # print (f"SA address = {SA_address}")
+    # print (f"NBC address = {NBC_address}")
 
     # For demonstration purposes, I'll just generate some mock data based on the user input.
     image_path = pfp_link  # replace with path to your image
@@ -405,7 +451,8 @@ def process_input(user_input):
     wallet_list = [FT_address, NBC_address, SA_address, NBC_address]
     in_list = [FT_in_all, NBC_in_all, SA_in_all, NBC_in_all]
     out_list = [FT_out_all, NBC_out_all, SA_out_all, NBC_out_all]
-    return image_path, hyperlink, values, wallet_list, user_json, in_list, out_list
+    data_list = [FT_data, NBC_data, SA_data, SA_data]
+    return image_path, hyperlink, values, wallet_list, user_json, in_list, out_list, data_list
 
 # st.title("SocialFi Tracker")
 
@@ -424,152 +471,207 @@ current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 st.write("Last updated:", current_time)
 
 
-auto_update = st.checkbox('Auto update every 10 seconds', value=False)
+# auto_update = st.checkbox('Auto update every 10 seconds', value=False)
 user_input = st.text_input("Enter Twitter User Name:")
 
+
+def is_within_last_hours(timestamp, hour):
+    # Convert the timestamp to a datetime object
+    dt_object = datetime.datetime.utcfromtimestamp(timestamp)
+    
+    # Get the current UTC time
+    current_time = datetime.datetime.utcnow()
+    
+    # Subtract 7 hours from the current time
+    seven_hours_ago = current_time - timedelta(hours=hour)
+    
+    # Check if the timestamp is within the last 7 hours
+    return dt_object > seven_hours_ago
+
+def update_data(data, plat, hours):
+    if data:
+        if plat == "FT":
+            buy_count, sell_count = FT_buy_sell_count(data, hours)
+        if plat == "SA":
+            buy_count, sell_count = SA_buy_sell_count(data, hours)
+        if plat == "NBC":
+            buy_count, sell_count = NBC_buy_sell_count(data, hours)
+        # Your data fetching and processing logic here.
+        # Use the 'hours' variable to adjust your data fetching as needed.
+        st.write(f"Buy tx in {hours} hours: ", buy_count)
+        st.write(f"Sell tx in {hours} hours: ", sell_count)
+    else:
+        st.write(f"Buy tx in {hours} hours: ", "None")
+        st.write(f"Sell tx in {hours} hours: ", "None")
+
+if 'processed_data' not in st.session_state:
+    st.session_state.processed_data = None
+
+if 'userchange' not in st.session_state:
+    st.session_state.userchange = None
+
+rerun_flag = False
+
 if user_input:
-    with st.spinner('Wait for it...'):
-        price_AVAX_response = requests.get(f"https://api.snowtrace.io/api?module=stats&action=ethprice&apikey={SA_API_KEY}")
-        price_AVAX = float(price_AVAX_response.json()["result"]["ethusd"])
-        price_ETH_response = requests.get(f"https://api.basescan.org/api?module=stats&action=ethprice&apikey={FT_API_KEY}")
-        price_ETH = float(price_ETH_response.json()["result"]["ethusd"])
-        price_BTC = price_ETH/float(price_ETH_response.json()["result"]["ethbtc"])
-        st.write("Current price: ", f"ETH = {round(price_ETH,3)} USD, ", f"BTC = {round(price_BTC,3)} USD, ", f"AVAX = {round(price_AVAX,3)} USD")
-        image, link, vals, wall_list, user_json, in_list, out_list = process_input(user_input)
 
-        col1, col2, col3, col4, col5 = st.columns(5)
+    
+    price_AVAX_response = requests.get(f"https://api.snowtrace.io/api?module=stats&action=ethprice&apikey={SA_API_KEY}")
+    price_AVAX = float(price_AVAX_response.json()["result"]["ethusd"])
+    price_ETH_response = requests.get(f"https://api.basescan.org/api?module=stats&action=ethprice&apikey={FT_API_KEY}")
+    price_ETH = float(price_ETH_response.json()["result"]["ethusd"])
+    price_BTC = price_ETH/float(price_ETH_response.json()["result"]["ethbtc"])
+    st.write("Current price: ", f"ETH = {round(price_ETH,3)} USD, ", f"BTC = {round(price_BTC,3)} USD, ", f"AVAX = {round(price_AVAX,3)} USD")
+    if (st.session_state.userchange != user_input) or rerun_flag:
+        # image, link, vals, wall_list, user_json, in_list, out_list = process_input(user_input)
+        with st.spinner('Wait for it...'):
+            st.session_state.processed_data = process_input(user_input)
+        st.session_state.userchange = user_input
+        image, link, vals, wall_list, user_json, in_list, out_list, data_list = st.session_state.processed_data
+    else:
+        image, link, vals, wall_list, user_json, in_list, out_list, data_list = st.session_state.processed_data
 
-        # Display image
-        with col1:
-            # st.image(image, caption="user_input", use_column_width=True)
-            X_image = "https://about.twitter.com/content/dam/about-twitter/x/brand-toolkit/logo-black.png.twimg.1920.png"
-            if image =="":
-                link = "https://twitter.com/"
-                image = X_image
-            # Display image with hyperlink
-            # st.markdown(f"[![Your Image]({image})]({link})")
-            st.markdown(f'<a href="{link}" target="_blank"><img src="{image}" width="100%"></a>', unsafe_allow_html=True)
-            st.markdown(f"**@{user_input}**")
-            st.markdown(f"**Followers:** <span style='font-size: 18px;'>{user_json['followers_count']}</span>", unsafe_allow_html=True)
-            st.markdown(f"**Tweets counts:** <span style='font-size: 18px;'>{user_json['tweets_count']}</span>", unsafe_allow_html=True)
+    col1, col2, col3, col4, col5 = st.columns(5)
 
-        with col2:
+    # Display image
+    with col1:
+        # st.image(image, caption="user_input", use_column_width=True)
+        X_image = "https://about.twitter.com/content/dam/about-twitter/x/brand-toolkit/logo-black.png.twimg.1920.png"
+        if image =="":
+            link = "https://twitter.com/"
+            image = X_image
+        # Display image with hyperlink
+        # st.markdown(f"[![Your Image]({image})]({link})")
+        st.markdown(f'<a href="{link}" target="_blank"><img src="{image}" width="100%"></a>', unsafe_allow_html=True)
+        st.markdown(f"**@{user_input}**")
+        st.markdown(f"**Followers:** <span style='font-size: 18px;'>{user_json['followers_count']}</span>", unsafe_allow_html=True)
+        st.markdown(f"**Tweets counts:** <span style='font-size: 18px;'>{user_json['tweets_count']}</span>", unsafe_allow_html=True)
 
-            # col11, col21 = st.columns(2)
-            FT_image = "https://forkast.news/wp-content/uploads/2023/08/Friend.tech-logo-1260x709.jpeg"
-            FT_url = f"https://www.friend.tech/{user_input}"
+    with col2:
 
-            FT_price = vals[0]
-            if FT_price == "None":
-                FT_price_u = "None"
-            else:
-                FT_price_u = round(FT_price*price_ETH, 2)
-            
-            FT_deposit = in_list[0]
-            if FT_deposit == "None":
-                FT_deposit_u = "None"
-            else:
-                FT_deposit_u = round(FT_deposit*price_ETH, 2)
+        # col11, col21 = st.columns(2)
+        FT_image = "https://forkast.news/wp-content/uploads/2023/08/Friend.tech-logo-1260x709.jpeg"
+        FT_url = f"https://www.friend.tech/{user_input}"
 
-            FT_withdraw = out_list[0]
-            if FT_withdraw == "None":
-                FT_withdraw_u = "None"
-            else:
-                FT_withdraw_u = round(FT_withdraw*price_ETH, 2)
+        FT_price = vals[0]
+        if FT_price == "None":
+            FT_price_u = "None"
+        else:
+            FT_price_u = round(FT_price*price_ETH, 2)
+        
+        FT_deposit = in_list[0]
+        if FT_deposit == "None":
+            FT_deposit_u = "None"
+        else:
+            FT_deposit_u = round(FT_deposit*price_ETH, 2)
 
-            st.markdown(f'<a href="{FT_url}" target="_blank"><img src="{FT_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
-            # st.image("https://forkast.news/wp-content/uploads/2023/08/Friend.tech-logo-1260x709.jpeg", use_column_width=True)
-            # Display the 4 values
-            st.markdown(f"**Price:** <span style='font-size: 18px; color: blue;'>{FT_price}</span> ETH (~{FT_price_u} USD)", unsafe_allow_html=True)
-            st.markdown(f"**Total supply:** <span style='font-size: 18px; color: blue;'>{vals[1]}</span>", unsafe_allow_html=True)
-            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: blue;'>{FT_deposit}</span> ETH (~{FT_deposit_u} USD)", unsafe_allow_html=True)
-            st.markdown(f"**All Withdraw:** <span style='font-size: 18px; color: blue;'>{FT_withdraw}</span> ETH (~{FT_withdraw_u} USD)", unsafe_allow_html=True)
+        FT_withdraw = out_list[0]
+        if FT_withdraw == "None":
+            FT_withdraw_u = "None"
+        else:
+            FT_withdraw_u = round(FT_withdraw*price_ETH, 2)
 
-        with col3:
-            NBC_image = "https://pbs.twimg.com/media/F8Kn5aeagAAWnpK.jpg:large"
-            NBC_url = f"https://pro.newbitcoincity.com/alpha/profile/{wall_list[1]}"
-            st.markdown(f'<a href="{NBC_url}" target="_blank"><img src="{NBC_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
-            # st.image("https://pbs.twimg.com/media/F8Kn5aeagAAWnpK.jpg:large", use_column_width=True)
-            NBC_price = vals[2]
-            if NBC_price == "None":
-                NBC_price_u = "None"
-            else:
-                NBC_price_u = round(vals[2]*price_BTC, 2)
-            
-            NBC_deposit = in_list[1]
-            if NBC_deposit == "None":
-                NBC_deposit_u = "None"
-            else:
-                NBC_deposit_u = round(in_list[1]*price_BTC, 2)
+        st.markdown(f'<a href="{FT_url}" target="_blank"><img src="{FT_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
+        # st.image("https://forkast.news/wp-content/uploads/2023/08/Friend.tech-logo-1260x709.jpeg", use_column_width=True)
+        # Display the 4 values
+        st.markdown(f"**Price:** <span style='font-size: 18px; color: blue;'>{FT_price}</span> ETH (~{FT_price_u} USD)", unsafe_allow_html=True)
+        st.markdown(f"**Total supply:** <span style='font-size: 18px; color: blue;'>{vals[1]}</span>", unsafe_allow_html=True)
+        st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: blue;'>{FT_deposit}</span> ETH (~{FT_deposit_u} USD)", unsafe_allow_html=True)
+        st.markdown(f"**All Withdraw:** <span style='font-size: 18px; color: blue;'>{FT_withdraw}</span> ETH (~{FT_withdraw_u} USD)", unsafe_allow_html=True)
+        FT_hours = st.slider("Check Buy/Sell in hours:", 0, 72, value=24, key = 1)
+        update_data(data_list[0], "FT", FT_hours)
 
-            NBC_withdraw = out_list[1]
-            if NBC_withdraw == "None":
-                NBC_withdraw_u = "None"
-            else:
-                NBC_withdraw_u = round(out_list[1]*price_ETH, 2)
-            if vals[2]!="None":
-                formatted_val = round(vals[2],7)
-                # st.write("Price:", f":orange[{formatted_val}]", "BTC")
-                st.markdown(f"**Price:** <span style='font-size: 18px; color: orange;'>{formatted_val}</span> BTC (~{round(formatted_val*price_BTC, 2)} USD)", unsafe_allow_html=True)
-            else:
-                st.markdown(f"**Price:** <span style='font-size: 18px; color: orange;'>{NBC_price}</span> BTC (~{NBC_price_u} USD)", unsafe_allow_html=True)
-            st.markdown(f"**Total supply:** <span style='font-size: 18px; color: orange;'>{vals[3]}</span>", unsafe_allow_html=True)
-            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: orange;'>{NBC_deposit}</span> BTC (~{NBC_deposit_u} USD)", unsafe_allow_html=True)
-            st.markdown(f"**All Withdraw:** <span style='font-size: 18px; color: orange;'>{NBC_withdraw}</span> ETH (~{NBC_withdraw_u} USD)", unsafe_allow_html=True)            
-            # st.write("Total supply:", f":orange[{vals[3]}]")
-            # st.write("All Deposit:", f":orange[{in_list[1]}]", "BTC")
+    with col3:
+        NBC_image = "https://pbs.twimg.com/media/F8Kn5aeagAAWnpK.jpg:large"
+        NBC_url = f"https://pro.newbitcoincity.com/alpha/profile/{wall_list[1]}"
+        st.markdown(f'<a href="{NBC_url}" target="_blank"><img src="{NBC_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
+        # st.image("https://pbs.twimg.com/media/F8Kn5aeagAAWnpK.jpg:large", use_column_width=True)
+        NBC_price = vals[2]
+        if NBC_price == "None":
+            NBC_price_u = "None"
+        else:
+            NBC_price_u = round(vals[2]*price_BTC, 2)
+        
+        NBC_deposit = in_list[1]
+        if NBC_deposit == "None":
+            NBC_deposit_u = "None"
+        else:
+            NBC_deposit_u = round(in_list[1]*price_BTC, 2)
 
-        with col4:
-            SA_image = "https://lwcdn.freebitco.in/wp-content/uploads/2023/10/Stars-Arena-img.png"
-            SA_url = f"https://starsarena.com/{user_input}/"
-            SA_price = vals[4]
-            if SA_price == "None":
-                SA_price_u = "None"
-            else:
-                SA_price_u = round(SA_price*price_AVAX, 2)
-            
-            SA_deposit = in_list[2]
-            if SA_deposit == "None":
-                SA_deposit_u = "None"
-            else:
-                SA_deposit_u = round(SA_deposit*price_AVAX, 2)
+        NBC_withdraw = out_list[1]
+        if NBC_withdraw == "None":
+            NBC_withdraw_u = "None"
+        else:
+            NBC_withdraw_u = round(out_list[1]*price_ETH, 2)
+        if vals[2]!="None":
+            formatted_val = round(vals[2],7)
+            # st.write("Price:", f":orange[{formatted_val}]", "BTC")
+            st.markdown(f"**Price:** <span style='font-size: 18px; color: orange;'>{formatted_val}</span> BTC (~{round(formatted_val*price_BTC, 2)} USD)", unsafe_allow_html=True)
+        else:
+            st.markdown(f"**Price:** <span style='font-size: 18px; color: orange;'>{NBC_price}</span> BTC (~{NBC_price_u} USD)", unsafe_allow_html=True)
+        st.markdown(f"**Total supply:** <span style='font-size: 18px; color: orange;'>{vals[3]}</span>", unsafe_allow_html=True)
+        st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: orange;'>{NBC_deposit}</span> BTC (~{NBC_deposit_u} USD)", unsafe_allow_html=True)
+        st.markdown(f"**All Withdraw:** <span style='font-size: 18px; color: orange;'>{NBC_withdraw}</span> ETH (~{NBC_withdraw_u} USD)", unsafe_allow_html=True)            
+        # st.write("Total supply:", f":orange[{vals[3]}]")
+        # st.write("All Deposit:", f":orange[{in_list[1]}]", "BTC")
+        NBC_hours = st.slider("Check Buy/Sell in hours:", 0, 72, value=24, key = 3)
+        update_data(data_list[1], "NBC", NBC_hours)
 
-            SA_withdraw = out_list[2]
-            if SA_withdraw == "None":
-                SA_withdraw_u = "None"
-            else:
-                SA_withdraw_u = round(SA_withdraw*price_AVAX, 2)
-            # col11, col21 = st.columns(2)
-            # st.image(SA_image, use_column_width=True)
-            st.markdown(f'<a href="{SA_url}" target="_blank"><img src="{SA_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
-            # Display the 4 values
-            st.markdown(f"**Price:** <span style='font-size: 18px; color: red;'>{SA_price}</span> AVAX (~{SA_price_u} USD)", unsafe_allow_html=True)
-            st.markdown(f"**Total supply:** <span style='font-size: 18px; color: red;'>{vals[5]}</span>", unsafe_allow_html=True)
-            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: red;'>{SA_deposit}</span> AVAX (~{SA_deposit_u} USD)", unsafe_allow_html=True)
-            st.markdown(f"**All Withdraw:** <span style='font-size: 18px; color: red;'>{SA_withdraw}</span> AVAX (~{SA_withdraw_u} USD)", unsafe_allow_html=True)
-            # st.write("Price:", f":orange[{vals[4]}]", "AVAX")
-            # st.write("Total supply:", f":orange[{vals[5]}]")
-            # st.write("All Deposit:", f":orange[{in_list[2]}]", "AVAX")
+    with col4:
+        SA_image = "https://lwcdn.freebitco.in/wp-content/uploads/2023/10/Stars-Arena-img.png"
+        SA_url = f"https://starsarena.com/{user_input}/"
+        SA_price = vals[4]
+        if SA_price == "None":
+            SA_price_u = "None"
+        else:
+            SA_price_u = round(SA_price*price_AVAX, 2)
+        
+        SA_deposit = in_list[2]
+        if SA_deposit == "None":
+            SA_deposit_u = "None"
+        else:
+            SA_deposit_u = round(SA_deposit*price_AVAX, 2)
 
-        with col5:
-            TOMO_image = "https://pbs.twimg.com/media/F8PojQDbMAAKPdZ?format=jpg&name=medium"
-            st.markdown(f'<a><img src="{TOMO_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
-            st.markdown(f"**(TOMO is under-developing...)**", unsafe_allow_html=True)
-            st.markdown(f"**Price:** <span style='font-size: 18px; color: orange;'>None</span> AVAX", unsafe_allow_html=True)
-            st.markdown(f"**Total supply:** <span style='font-size: 18px; color: orange;'>None</span>", unsafe_allow_html=True)
-            st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: orange;'>None</span> AVAX", unsafe_allow_html=True)
-            # st.write("(TOMO is under-developing...)")
-            # st.image(TOMO_image, use_column_width=True)
-            # if vals[2]!="None":
-            #     formatted_val = "{:.5f}".format(vals[2])
-            #     st.write("Price:", f":orange[None]", "ETH")
-            # else:
-            # st.write("Price:", f":orange[None]", "ETH")
-            # st.write("Total supply:", f":orange[None]")
+        SA_withdraw = out_list[2]
+        if SA_withdraw == "None":
+            SA_withdraw_u = "None"
+        else:
+            SA_withdraw_u = round(SA_withdraw*price_AVAX, 2)
+        # col11, col21 = st.columns(2)
+        # st.image(SA_image, use_column_width=True)
+        st.markdown(f'<a href="{SA_url}" target="_blank"><img src="{SA_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
+        # Display the 4 values
+        st.markdown(f"**Price:** <span style='font-size: 18px; color: red;'>{SA_price}</span> AVAX (~{SA_price_u} USD)", unsafe_allow_html=True)
+        st.markdown(f"**Total supply:** <span style='font-size: 18px; color: red;'>{vals[5]}</span>", unsafe_allow_html=True)
+        st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: red;'>{SA_deposit}</span> AVAX (~{SA_deposit_u} USD)", unsafe_allow_html=True)
+        st.markdown(f"**All Withdraw:** <span style='font-size: 18px; color: red;'>{SA_withdraw}</span> AVAX (~{SA_withdraw_u} USD)", unsafe_allow_html=True)
+        SA_hours = st.slider("Check Buy/Sell in hours:", 0, 72, value=24, key = 2)
+        update_data(data_list[2], "SA", SA_hours)
+        
+        # st.write("Price:", f":orange[{vals[4]}]", "AVAX")
+        # st.write("Total supply:", f":orange[{vals[5]}]")
+        # st.write("All Deposit:", f":orange[{in_list[2]}]", "AVAX")
+
+    with col5:
+        TOMO_image = "https://pbs.twimg.com/media/F8PojQDbMAAKPdZ?format=jpg&name=medium"
+        st.markdown(f'<a><img src="{TOMO_image}" width="100%" height="100%"></a>', unsafe_allow_html=True)
+        st.markdown(f"**(TOMO is under-developing...)**", unsafe_allow_html=True)
+        st.markdown(f"**Price:** <span style='font-size: 18px; color: orange;'>None</span> AVAX", unsafe_allow_html=True)
+        st.markdown(f"**Total supply:** <span style='font-size: 18px; color: orange;'>None</span>", unsafe_allow_html=True)
+        st.markdown(f"**All Deposit:** <span style='font-size: 18px; color: orange;'>None</span> AVAX", unsafe_allow_html=True)
+        # st.write("(TOMO is under-developing...)")
+        # st.image(TOMO_image, use_column_width=True)
+        # if vals[2]!="None":
+        #     formatted_val = "{:.5f}".format(vals[2])
+        #     st.write("Price:", f":orange[None]", "ETH")
+        # else:
+        # st.write("Price:", f":orange[None]", "ETH")
+        # st.write("Total supply:", f":orange[None]")
+
 
 st.write("Produced by 0x0funky: ", "https://twitter.com/0x0funky ")
 st.write("FT: ", "https://friend.tech/0x0funky")
 st.write("SocialFi Tracker open for free now, will open for key holders only in the future.")
-if auto_update:
-    time.sleep(10)  # wait for 10 seconds
-    st.rerun()
+# if auto_update:
+#     rerun_flag =True
+#     time.sleep(10)  # wait for 10 seconds
+#     st.rerun()
