@@ -200,7 +200,6 @@ def SA_in_out_balance(address):
     for tx in transactions:
         if tx['to'].lower() == address.lower():
             pre_address = tx["from"]
-            print (pre_address)
             if pre_address.lower() =="0xA16F524a804BEaED0d791De0aa0b5836295A2a84".lower():
                 break
             if pre_address.lower() =="0x9f8c163cBA728e99993ABe7495F06c0A3c8Ac8b9".lower():
@@ -349,7 +348,6 @@ def process_input(user_input):
         data = FT_balance_tx(FT_address)
         transactions = data
         total_out_value = sum(int(tx['value']) for tx in transactions if ((tx['from'].lower() == FT_address.lower()) and (tx["to"].lower()!="0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4".lower())))
-        print (total_out_value)
         total_incoming_value1 = sum(int(tx['value']) for tx in transactions if tx['to'].lower() == FT_address.lower())
         data = FT_balance_itx(FT_address)
         transactions = data
