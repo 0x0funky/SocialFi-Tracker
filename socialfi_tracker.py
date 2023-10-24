@@ -323,6 +323,7 @@ UPDATE_INTERVAL = 5  # in seconds
 # list_user = current_account_info["user_twitter_username"].tolist()
 
 def process_input(user_input):
+    print (user_input)
     try:
         user_json = get_user_details(user_input)
     except:
@@ -393,6 +394,9 @@ def process_input(user_input):
         # NBC_str = f"NBC => Price: {price_NBC} BTC, ShareSupply: {supply_share_NBC}"
     
     # reply_str=f"""0x0funky || {FT_str} || {NBC_str} """
+    print (f"FT address = {FT_address}")
+    print (f"SA address = {SA_address}")
+    print (f"NBC address = {NBC_address}")
 
     # For demonstration purposes, I'll just generate some mock data based on the user input.
     image_path = pfp_link  # replace with path to your image
